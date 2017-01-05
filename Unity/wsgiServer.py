@@ -19,10 +19,10 @@ def application(environ, start_response):
 	d = parse_qs(request_body)
 
 	for x in d:
-		print "{0}: {1}".format(x, d[x][0])
+		for xi in d[x]:
+			print "{0}: {1}".format(x, xi)
 
 	function = d['Function'][0]
-	print "Function: " + str(function)
 
 	conn = sqlite3.connect('MP.db')
 	curs = conn.cursor()
@@ -36,6 +36,20 @@ def application(environ, start_response):
 		resultset = curs.execute(query, param).fetchall()
 		if len(resultset) == 0: # Register New Device
 			response_body='Unrecognized Device'
+		else:
+			response_body='Device Nickname: ' + str(resultset[0][0])
+	elif function == 'NewDevice':
+		print "Registering New Device"
+		query = 'INSERT INTO Device (UniqueIdentifier, Nickname) VALUES (?, ?)'
+		param = (d['DeviceID'][0], d['Nickname'][0], )
+		curs.execute(query, param)
+		conn.commit()
+
+		query = 'SELECT Nickname FROM Device WHERE UniqueIdentifier = ?'
+		param = (d['DeviceID'][0] ,)
+		resultset = curs.execute(query, param).fetchall()
+		if len(resultset) == 0: # Something went wrong...
+			response_body='Device not registered'
 		else:
 			response_body='Device Nickname: ' + str(resultset[0][0])
 	elif function == 'CreatePlayer':
