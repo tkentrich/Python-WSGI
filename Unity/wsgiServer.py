@@ -1,22 +1,42 @@
 #!/usr/bin/env python
 
 import sqlite3
+import random
 from wsgiref.simple_server import make_server
 from cgi import parse_qs, escape
+from Crypto.Cipher import AES
+
+key = 'RichKent&Anabel!'
+
+def decrypt(key, cipher_text):
+	print "Cipher text length: " + str(len(cipher_text))
+        decryptor = AES.new(key, AES.MODE_CBC, cipher_text[0:16])
+        return decryptor.decrypt(cipher_text[16:])
+
+def encrypt(key, plain_text):
+        iv = ''.join(chr(random.randint(0, 0xff)) for i in range(16))
+        encryptor = AES.new(key, AES.MODE_CBC, iv)
+        return iv + encryptor.encrypt(plain_text + " " * (16 - len(plain_text) % 16))
+
+def playerNames(curs, deviceId):
+	print "Getting players for " + str(deviceId)
+	query = 'SELECT Name from Player p INNER JOIN PlayerDeviceRegistration r ON r.Player = p.rowid WHERE r.Device = ?'
+	param = (deviceId, )
+	resultset = curs.execute(query, param).fetchall()
+	response_body="Players:"
+	for row in resultset:
+		response_body += row[0]
+	return response_body
 
 def application(environ, start_response):
-
-	# the environment variable CONTENT_LENGTH may be empty or missing
 	try:
 		request_body_size = int(environ.get('CONTENT_LENGTH', 0))
 	except (ValueError):
 		request_body_size = 0
 
-	# When the method is POST the variable will be sent
-	# in the HTTP request body which is passed by the WSGI server
-	# in the file like wsgi.input environment variable.
 	request_body = environ['wsgi.input'].read(request_body_size)
-	d = parse_qs(request_body)
+	
+	d = parse_qs(decrypt(key, request_body))
 
 	for x in d:
 		for xi in d[x]:
@@ -37,7 +57,7 @@ def application(environ, start_response):
 		if len(resultset) == 0: # Register New Device
 			response_body='Unrecognized Device'
 		else:
-			response_body='Device Nickname: ' + str(resultset[0][0])
+			response_body=playerNames(curs, d['DeviceID'][0])
 	elif function == 'NewDevice':
 		print "Registering New Device"
 		query = 'INSERT INTO Device (UniqueIdentifier, Nickname) VALUES (?, ?)'
@@ -51,7 +71,8 @@ def application(environ, start_response):
 		if len(resultset) == 0: # Something went wrong...
 			response_body='Device not registered'
 		else:
-			response_body='Device Nickname: ' + str(resultset[0][0])
+			# response_body='Device Nickname: ' + str(resultset[0][0])
+			response_body=playerNames(curs, d['DeviceID'][0])
 	elif function == 'CreatePlayer':
 		query = 'INSERT INTO Player (Name) VALUES ("'+d.get('PlayerName')+'")'
 		curs.execute(query)
