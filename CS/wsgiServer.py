@@ -2,11 +2,18 @@
 
 import sqlite3
 import random
+import sys,os
 from wsgiref.simple_server import make_server
+
 from cgi import parse_qs, escape
 from Crypto.Cipher import AES
 
-key = 'RichKent&Anabel!'
+
+try:
+	key=os.environ['AES_KEY']
+except KeyError:
+	print "AES_KEY not set!"
+	sys.exit(1)
 
 def decrypt(key, cipher_text):
 	print "Cipher text length: " + str(len(cipher_text))
