@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+class CannotJoin(Exception):
+	pass
+
 class Game:
 	CREATED = 100
 	FILLED = 101
@@ -18,12 +21,13 @@ class Game:
 		self.status = Game.CREATED
 
 	def join(self, joiner):
-		if len(self.players) < self.maxPlayers:
+		if self.status < Game.FILLED:
 			self.players.append(LevelObject(joiner))
 			self.addObject(players[-1])
 			if len(self.players) == self.maxPlayers:
 				self.status = Game.FILLED
-		# else Raise('FILLED')
+		else:
+			raise CannotJoin(self.status)
 
 	def start(self):
 		if len(self.players) >= self.minPlayers and len(self.players) <= self.maxPlayers and self.status < Game.STARTING:

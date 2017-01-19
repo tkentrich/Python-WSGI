@@ -47,15 +47,13 @@ def application(environ, start_response):
 	if function == 'CheckIn':
 		print "Checking In: " + deviceId
 		response_body="CheckedIn"
-	elif function == 'GetGames':
+
+	elif function == 'GetGames': # Get a list of all games (summary for a user to choose from)
 		print "Get Games"
 		response_body = "Games"
 		for x in games:
 			response_body += ":" + x.desc()
-	elif function == 'GetGame':
-		creator = d['Creator'][0]
-		print "Get Game Details: " + creator
-		response_body = "GameDetails:%s" % (games[creator].getUpdate())
+
 	elif function == 'CreateGame':
 		print "Creating Game: " + deviceId
 		creator = deviceId
@@ -66,24 +64,35 @@ def application(environ, start_response):
 		# games.insert(Game(creator, scene))
 		games[creator]=Game(creator, scene)
 		response_body="GameCreated"
-	elif function == 'JoinGame':
+
+	elif function == 'JoinGame': # Player wants to join a game
 		print "Joining Game"
 		creator = d['Creator'][0]
-		games[creator]['player2'] = deviceId
-		response_body="GameJoined:"+games[creator]['scene']
+		try:
+			games[creator].join(deviceId)
+			response_body="GameJoined:"+games[creator]['scene']
+		except CannotJoin:
+			response_body="CannotJoin"
+
+	elif function == 'GetGame': # Get game details (User has created or joined a game)
+		creator = d['Creator'][0]
+		print "Get Game Details: " + creator
+		response_body = "GameDetails:%s" % (games[creator].getUpdate())
+
 	elif function == 'StartGame':
-		games[deviceId].start()
+		try:
+			games[deviceId].start()
+			response_body="GameStart:"+games[deviceId].scene
+		except CannotStart:
+			response_body="CannotStart"
+
 	elif function == 'UpdatePosition':
 		gameId = d['Creator'][0]
 		objectName = d['Object'][0]
 		objectPosition = d['Position'][0].split(",")
-		games[gameId][
-		for x in games[gameId]['objects']:
-			if x == objectName:
-				game[]=objectPosition
-		response_body=""
-		for x in game['objects']:
-			response_body += 
+		games[gameId].updatePosition(objectName, objectPosition)
+                response_body = "GameDetails:%s" % (games[creator].getUpdate())
+
 	status = '200 OK'
 
 	response_headers = [
