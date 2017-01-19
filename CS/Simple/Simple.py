@@ -12,8 +12,9 @@ class Game(object):
 	COMPLETE = 300
 
 	def __init__(self, creator, scene):
-		self.players = [Player(creator)]
-		self.objects = [self.players[-1]]
+		self.creator = Player(creator)
+		self.players = {creator: self.creator}
+		self.objects = {creator: self.creator}
 		self.scene = scene
 		# This should depend on the scene
 		self.minPlayers = 1
@@ -22,8 +23,8 @@ class Game(object):
 
 	def join(self, joiner):
 		if self.status < Game.FILLED:
-			self.players.append(Player(joiner))
-			self.addObject(self.players[-1])
+			self.players[joiner] = Player(joiner)
+			self.addObject(self.players[joiner])
 			if len(self.players) == self.maxPlayers:
 				self.status = Game.FILLED
 		else:
@@ -32,7 +33,7 @@ class Game(object):
 	def start(self):
 		if len(self.players) >= self.minPlayers and len(self.players) <= self.maxPlayers and self.status < Game.STARTING:
 			i = 0
-			for p in self.players:
+			for p in self.players.values():
 				# Position should depend on scene
 				p.setPosition(0,0,i * 2)
 				i += 1
@@ -40,14 +41,13 @@ class Game(object):
 			self.status = Game.STARTING
 
 	def startGame(self):
-		#Set positions (unless already done...hmm...)
 		self.status = Game.STARTED
 
 	def addObject(self, obj):
-		self.objects.append(obj)
+		self.objects[obj.name] = obj
 
 	def name(self):
-		return "%s|%s" % (self.players[0].name, self.scene)
+		return "%s|%s" % (self.creator.name, self.scene)
 
 	def desc(self):
 		return "%s|%d/%d/%d" % (self.name(), len(self.players), self.minPlayers, self.maxPlayers)
@@ -57,14 +57,14 @@ class Game(object):
 			if self.status == Game.STARTING and asker != None:
 				self.players[asker].notifyStart = True
 				allNotified = True
-				for p in self.players:
+				for p in self.players.values():
 					 if not p.notifyStart:
 						allNotified = False
 				if allNotified:
 					self.startGame()
-			return self.name() + "^".join([p.name for p in self.players]) 
+			return self.name() + "^".join([p.name for p in self.players.values()]) 
 		elif self.status < Game.COMPLETE:
-			return "^".join([p.desc() for p in self.players])
+			return "^".join([p.desc() for p in self.players.values()])
 
 class LevelObject(object):
 	def __init__(self, name):
@@ -83,4 +83,4 @@ class LevelObject(object):
 class Player(LevelObject):
 	def __init__(self, name):
 		LevelObject.__init__(self, name)
-		self.notifiedStart = False
+		self.notifyStart = False
