@@ -39,8 +39,11 @@ def application(environ, start_response):
 	function = d['Function'][0]
 	deviceId = d['DeviceId'][0]
 
-	# conn = sqlite3.connect('MultiBall.db')
-	# curs = conn.cursor()
+	print "Function: " + function
+	print "Device: " + deviceId
+
+	conn = sqlite3.connect('Simple.db')
+	curs = conn.cursor()
 
 	response_body = "Default Response"
 
@@ -48,19 +51,26 @@ def application(environ, start_response):
 		print "Checking In: " + deviceId
 		response_body="CheckedIn"
 
+	elif function == 'GetScenes':
+		print "Get scenes for: " + deviceId
+		query = "SELECT Name FROM Scene"
+		result = curs.execute(query).fetchall()
+		response_body=str("Scenes:" + ":".join([x[0] for x in result]))
+		
 	elif function == 'GetGames': # Get a list of all games (summary for a user to choose from)
 		print "Get Games"
 		response_body = "Games"
 		for x in games:
 			response_body += ":" + x.desc()
+		if response_body == "Games":
+			response_body = "NoGamesAvailable"
 
 	elif function == 'CreateGame':
 		print "Creating Game: " + deviceId
 		creator = deviceId
 		# creator = d['Username'][0]
-		# Will need to have a "Which game" type of thing here
-		# scene = d['Scene'][0]
-		scene = "TestScene"
+		scene = d['Scene'][0]
+		# scene = "TestScene"
 		# games.insert(Game(creator, scene))
 		games[creator]=Game(creator, scene)
 		response_body="GameCreated"
@@ -99,8 +109,10 @@ def application(environ, start_response):
 		('Content-Type', 'text/html'),
 		('Content-Length', str(len(response_body)))
 	]
-
+	print "Response Headers:"
+	print response_headers
 	start_response(status, response_headers)
+	print "Response started, now to return response_body of " + response_body
 	return [response_body]
 
 httpd = make_server('', 8051, application)
