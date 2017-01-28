@@ -61,7 +61,7 @@ def application(environ, start_response):
 		print "Get Games"
 		response_body = "Games"
 		for x in games:
-			response_body += ":" + x.desc()
+			response_body += ":" + games[x].desc()
 		if response_body == "Games":
 			response_body = "NoGamesAvailable"
 
@@ -112,7 +112,7 @@ def application(environ, start_response):
 	print "Response Headers:"
 	print response_headers
 	start_response(status, response_headers)
-	print "Response started, now to return response_body of " + response_body
+	# print "Response started, now to return response_body of " + response_body
 	return [response_body]
 
 httpd = make_server('', 8051, application)
